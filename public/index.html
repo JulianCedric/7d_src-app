@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"/>
+  </head>
+  <body>
+    <div class='container-fluid'>
+      <div class='row'>
+        <div class='col-md-offset-4 col-md-4 text-center well'>
+          <h2>Build a Routine</h2>
+          <p>Routines are collections of tasks. Start by giving your new routine a name:</p>
+          <form id='routine-form'>
+            <div class='form-group'>
+              <input class='form-control' placeholder='Name of your new routine'>
+            </div>
+            <hr>
+            <div class='form-group'>
+              <input class='form-control' placeholder='Task 1'>
+            </div>
+            <div class='form-group'>
+              <input class='form-control' placeholder='Task 2'>
+            </div>
+            <div class='form-group'>
+              <input class='form-control' placeholder='etc.'>
+            </div>
+            <div id='add-more-container'>
+              <h5><a href='#' if='add-more'>Add More</h5>
+            </div>
+                <hr>
+            <button class='btn btn-block btn-primary'>Create</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script>
+      const axios = require('axios');
+const moment = require('moment');
+const prompts = require('prompts');
+
+// CONFIG
+// Set your OpenAI GPT-3 API key
+const apiKey = 'YOUR_OPENAI_API_KEY'; // Replace with your actual API key
+
+// Constants
+const MAX_ACT_STEPS_SUGGEST = 3;
+
+// Function to suggest routine based on current hour
+function suggestFreeRoutine(currHour) {
+    if (0 <= currHour && currHour <= 10) {
+        return 'sleep';
+    } else if (10 <= currHour && currHour <= 12) {
+        return 'exercise';
+    } else if (12 <= currHour && currHour <= 13) {
+        return 'eat';
+    } else if (13 <= currHour && currHour <= 18) {
+        return 'deep_work';
+    } else if (18 <= currHour && currHour < 22) {
+        return 'leisure';
+    } else if (currHour >= 22) {
+        return 'deep_work';
+    }
+}
+
+function suggestWorkRoutine(currHour) {
+    if (0 <= currHour && currHour <= 8) {
+        return 'sleep';
+    } else if (8 <= currHour && currHour <= 12) {
+        return 'deep_work';
+    } else if (12 <= currHour && currHour <= 13) {
+        return 'eat';
+    } else if (13 <= currHour && currHour <= 17) {
+        return 'deep_work';
+    } else if (17 <= currHour && currHour <= 18) {
+        return 'exercise';
+    } else if (19 <= currHour && currHour <= 20) {
+        return 'eat';
+    } else if (20 <= currHour && currHour < 23) {
+        return 'leisure';
+    }
+}
+
+// Main function
+async function main() {
+    const currTime = moment();
+    const dayOfWeekInt = currTime.day();
+    const dayOfWeek = currTime.format('dddd');
+    const currHour = currTime.hour();
+
+    let suggestedRoutine;
+
+    if (dayOfWeekInt >= 5) {
+        suggestedRoutine = suggestFreeRoutine(currHour);
+    } else {
+        suggestedRoutine = suggestWorkRoutine(currHour);
+    }
+
+    console.log(`Today is ${dayOfWeek}`);
+    console.log(`The current time is ${currTime.format('hh:mmA')}`);
+
+    if (suggestedRoutine === 'sleep') {
+        console.log('You should be sleeping now!');
+    } else {
+        console.log(`You should be doing a ${suggestedRoutine} activity right now!`);
+        console.log('May I suggest the following activity?');
+
+        const suggestedActs = routines[suggestedRoutine];
+        const suggestedRoutineSan = suggestedRoutine.replace('_', ' ');
+        const randomSuggest = suggestedActs[Math.floor(Math.random() * suggestedActs.length)];
+       
+        console.log(randomSuggest.name);
+        console.log(randomSuggest.description);
+
+        const response = await prompts({
+            type: 'confirm',
+            name: 'doActivity',
+            message: 'Do you want to do this activity?',
+            initial: true,
+        });
+
+        if (response.doActivity) {
+            console.log('Great! Let\'s do it!');
+        } else {
+            console.log('Let\'s ask ChatGPT what to do then!');
+            let loop = true;
+            let noCounter = 0;
+
+            while (loop) {
+                console.log('********************');
+
+                // Use your ChatGPT API call logic here
+                // Example:
+                // const getResponse = await generateResponse(`Please suggest a unique ${suggestedRoutineSan} activity that I can do. Return with parameters activity_name and steps. steps is a list of ${MAX_ACT_STEPS_SUGGEST} action items`);
+
+                // console.log(getResponse.activity_name);
+                // console.log('Try these steps!');
+                // getResponse.steps.forEach(s => console.log(`- ${s}`));
+
+                console.log('********************');
+
+                const doThis = await prompts({
+                    type: 'confirm',
+                    name: 'doActivity',
+                    message: 'Do you want to do this?',
+                    initial: true,
+                });
+
+                if (doThis.doActivity) {
+                    break;
+                } else {
+                    console.log('Let\'s ask ChatGPT again!');
+                    noCounter += 1;
+                }
+            }
+        }
+    }
+}
+
+// Run the main function
+main();
+    </script>
+  </body>
+</html>
